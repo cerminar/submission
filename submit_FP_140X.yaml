@@ -25,7 +25,7 @@ Common:
     # - HAHM_ZdToEE_m15_pu200
 
   # cmssw_config: ../Phase2EGTriggerAnalysis/NtupleProducer/test/step1_L1TCorr_EGNtuples.py
-  version: 140Xv0C1
+  version: 140Xv1F3
   output_dir_base: /eos/cms/store/cmst3/group/l1tr/cerminar/l1teg/fp_ntuples
   ncpu: 1
   output_file_name: perfNano.root
@@ -54,7 +54,7 @@ Configuration:
 
 DoubleElectron_FlatPt-1To100_PU200:
   # input_dataset: /DoubleElectron_FlatPt-1To100-gun/Phase2Fall22DRMiniAOD-PU200_125X_mcRun4_realistic_v2-v1/GEN-SIM-DIGI-RAW-MINIAOD
-  input_directory: /eos/cms/store/cmst3/group/l1tr/FastPUPPI/14_2_X/fpinputs_140X/v0/DoubleElectron_FlatPt-1To100_PU200
+  input_directory:  /eos/cms/store/cmst3/group/l1tr/FastPUPPI/15_1_X/fpinputs_140X/v1/DoubleElectron_FlatPt-1To100-gun/DoubleElectron_FlatPt-1To100_PU200_151Xv0/251006_154048/0000/
   crab: False
   splitting_mode: file_based
   splitting_granularity: 2
@@ -73,7 +73,7 @@ DoubleElectron_FlatPt-1To100_PU200:
 
 DoublePhoton_FlatPt-1To100_PU200:
   # input_dataset: /DoublePhoton_FlatPt-1To100-gun/Phase2Fall22DRMiniAOD-PU200_125X_mcRun4_realistic_v2-v1/GEN-SIM-DIGI-RAW-MINIAOD
-  input_directory: /eos/cms/store/cmst3/group/l1tr/FastPUPPI/14_2_X/fpinputs_140X/v0/DoublePhoton_FlatPt-1To100_PU200/
+  input_directory: /eos/cms/store/cmst3/group/l1tr/FastPUPPI/15_1_X/fpinputs_140X/v1/DoublePhoton_FlatPt-1To100-gun/DoublePhoton_FlatPt-1To100_PU200_151Xv0/250910_165221/0000/
   crab: False
   splitting_mode: file_based
   splitting_granularity: 2
@@ -100,7 +100,7 @@ DoublePhoton_FlatPt-1To100_PU200:
 
 NuGunAllEta_PU200:
   # input_dataset: /MinBias_TuneCP5_14TeV-pythia8/Phase2Fall22DRMiniAOD-PU200_125X_mcRun4_realistic_v2-v1/GEN-SIM-DIGI-RAW-MINIAOD
-  input_directory: /eos/cms/store/cmst3/group/l1tr/FastPUPPI/14_2_X/fpinputs_140X/v0/SingleNeutrino_PU200
+  input_directory: /eos/cms/store/cmst3/group/l1tr/FastPUPPI/15_1_X/fpinputs_140X/v1/MinBias_TuneCP5_14TeV-pythia8/NuGunAllEta_PU200_151Xv0/250910_165617/0000/
   crab: False
   splitting_mode: file_based
   splitting_granularity: 1
@@ -125,7 +125,7 @@ NuGunAllEta_PU200:
 
 DYToLL_M-10To50_PU200:
   # input_dataset =
-  input_directory: /eos/cms/store/cmst3/group/l1tr/FastPUPPI/14_2_X/fpinputs_140X/v0/DYToLL_M-10To50_PU200
+  input_directory: /eos/cms/store/cmst3/group/l1tr/FastPUPPI/15_1_X/fpinputs_140X/v0/DYToLL_M-10To50_PU200
   crab: False
   splitting_mode: file_based
   splitting_granularity: 2
@@ -142,7 +142,7 @@ DYToLL_M-10To50_PU200:
 
 DYToLL_M-50_PU200:
   # input_dataset =
-  input_directory: /eos/cms/store/cmst3/group/l1tr/FastPUPPI/14_2_X/fpinputs_140X/v0/DYToLL_M-50_PU200
+  input_directory: /eos/cms/store/cmst3/group/l1tr/FastPUPPI/15_1_X/fpinputs_140X/v0/DYToLL_M-50_PU200
   crab: False
   splitting_mode: file_based
   splitting_granularity: 2
@@ -175,7 +175,7 @@ DYToLL_M-50_PU200:
 
 TT_PU200:
   # input_dataset: /TT_TuneCP5_14TeV-powheg-pythia8/Phase2HLTTDRSummer20ReRECOMiniAOD-PU200_111X_mcRun4_realistic_T15_v1-v2/FEVT
-  input_directory: /eos/cms/store/cmst3/group/l1tr/FastPUPPI/14_2_X/fpinputs_140X/v0/TT_PU200
+  input_directory: /eos/cms/store/cmst3/group/l1tr/FastPUPPI/15_1_X/fpinputs_140X/v1/TT_TuneCP5_14TeV-powheg-pythia8/TT_PU200_151Xv0/250910_165631/0000/
   crab: False
   splitting_mode: file_based
   splitting_granularity: 2
