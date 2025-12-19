@@ -110,6 +110,9 @@ class TaskConfig:
 
         for key, value in list(task_config.items()):
             setattr(self, key, value)
+        for key, value in list(common_config.items()):
+            if key not in task_config.keys():
+                setattr(self, key, value)
 
         self.task_base_dir = '{}/{}/'.format(
             common_config['name'],
