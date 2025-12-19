@@ -11,6 +11,7 @@ import platform
 import tarfile
 import warnings
 import git
+from math import ceil
 from process_pickler import pickler
 
 import yaml
@@ -171,12 +172,18 @@ def getLSs(file_name):
     return lumis
 
 
-def splitFiles(files, splitting_mode, splitting_granularity, max_events=None):
+def splitFiles(files, splitting_mode, splitting_granularity, max_events=None, max_njobs=None):
     split_files = []
     split_logic = []
     if splitting_mode == 'file_based':
         size = int(splitting_granularity)
         split_files = [files[i:i+size] for i in range(0, len(files), size)]
+    elif splitting_mode == 'job_based':
+        assert max_njobs is not None, "max_njobs must be provided for job_based splitting"
+        njobs = int(min(max_njobs, ceil(len(files)/splitting_granularity)))
+        split_files = [[] for _ in range(njobs)]
+        for i, file in enumerate(files):
+            split_files[i % njobs].append(file)
     elif splitting_mode == 'lumi_based':
         for file_name in files:
             # print file_name
@@ -268,7 +275,8 @@ def getJobParams(mode, task_conf):
                 input_files, 
                 task_conf.splitting_mode, 
                 task_conf.splitting_granularity, 
-                max_events)
+                max_events,
+                getattr(task_conf, 'max_njobs', None))
             n_jobs_max = len(split_files)
             n_jobs = n_jobs_max
             if(hasattr(task_conf, 'max_njobs')):
@@ -284,6 +292,8 @@ def getJobParams(mode, task_conf):
             params['SPLIT'] = split_logic
             if task_conf.splitting_mode == 'event_ranges':
                 params['TEMPL_NEVENTS'] = task_conf.splitting_granularity
+            elif task_conf.splitting_mode == 'job_based':
+                params['TEMPL_NEVENTS'] = int(ceil(task_conf.max_events / n_jobs))
             else:
                 params['TEMPL_NEVENTS'] = -1
 
