@@ -3,6 +3,7 @@
 import optparse
 import configparser
 import os
+import re
 import sys
 import shutil
 import subprocess
@@ -434,6 +435,12 @@ def createCondorConfig(mode, params):
     condor_template_file.close()
     condor_template = condor_template.replace('TEMPL_NJOBS', str(params['NJOBS']))
     templs_keys = [key for key in list(params.keys()) if 'TEMPL_' in key]
+    if "CMSSW_VERSION" in os.environ:
+        el_version = os.environ["SCRAM_ARCH"].split('_')[0]
+        if "MY.WantOS" in condor_template:
+            condor_template = re.sub(r"MY.WantOS\s*=\s*\"el\d+\"", f"MY.WantOS = \"{el_version}\"", condor_template)
+        else:
+            print("Warning: Could not set MY.WantOS in condor template.")
     for key in templs_keys:
         condor_template = condor_template.replace(key, str(params[key]))
 
