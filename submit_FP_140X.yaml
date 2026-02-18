@@ -25,7 +25,7 @@ Common:
     # - HAHM_ZdToEE_m15_pu200
 
   # cmssw_config: ../Phase2EGTriggerAnalysis/NtupleProducer/test/step1_L1TCorr_EGNtuples.py
-  version: 140Xv1F3
+  version: 140Xv1F5
   output_dir_base: /eos/cms/store/cmst3/group/l1tr/cerminar/l1teg/fp_ntuples
   ncpu: 1
   output_file_name: perfNano.root
@@ -116,8 +116,8 @@ NuGunAllEta_PU200:
     - addSeededConeJets();
     - addCTL2Met();
   job_flavor: longlunch
-  max_events: 500000
-
+  max_events: 700000
+  max_njobs: 150
 
 # /DYToLL_M-10To50_TuneCP5_14TeV-pythia8/Phase2Fall22DRMiniAOD-PU200_Pilot_125X_mcRun4_realistic_v2-v2/GEN-SIM-DIGI-RAW-MINIAOD
 # /DYToLL_M-10To50_TuneCP5_14TeV-pythia8/Phase2Fall22DRMiniAOD-noPU_Pilot_125X_mcRun4_realistic_v2-v1/GEN-SIM-DIGI-RAW-MINIAOD
