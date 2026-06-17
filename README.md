@@ -12,7 +12,11 @@ Create the Job configuration using the command:
 
 Submit the jobs to the queues via the command:
 
-`python submit.py -f submit.yaml --submit`
+`python3 submit.py -f submit.yaml --submit`
+
+View stats about the jobs:
+
+`python3 submit.py -f submit.yaml --stats  --task DoubleElectron_FlatPt-1To100_PU200,NuGunAllEta_PU200`
 
 ## Configuration file
 

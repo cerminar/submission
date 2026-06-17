@@ -10,7 +10,7 @@ import subprocess
 import platform
 import tarfile
 import warnings
-import git
+import datetime
 from math import ceil
 from process_pickler import pickler
 
@@ -18,7 +18,11 @@ import yaml
 
 def parse_yaml(filename):
     with open(filename, 'r') as stream:
-        cfgfile = yaml.load(stream, Loader=yaml.FullLoader)
+        loader = getattr(yaml, 'FullLoader', None)
+        if loader is not None:
+            cfgfile = yaml.load(stream, Loader=loader)
+        else:
+            cfgfile = yaml.safe_load(stream)
     return cfgfile
 
 
@@ -598,7 +602,158 @@ def printWait(task_conf, clusterId):
         print(e.output)
 
 
+def _parse_condor_timestamp(timestamp_text):
+    parsed = datetime.datetime.strptime(timestamp_text, '%m/%d %H:%M:%S')
+    return parsed.replace(year=datetime.datetime.now().year)
+
+
+def _format_duration(seconds):
+    if seconds is None:
+        return 'n/a'
+    total_seconds = int(round(seconds))
+    hours, remainder = divmod(total_seconds, 3600)
+    minutes, secs = divmod(remainder, 60)
+    return f'{hours:d}:{minutes:02d}:{secs:02d}'
+
+
+def parse_condor_log_stats(task_config):
+    logs_dir = os.path.join(task_config.task_dir, 'logs')
+    condor_logs = sorted(glob.glob(os.path.join(logs_dir, 'condor.*.log')))
+    if not condor_logs:
+        return {
+            'task_name': task_config.task_name,
+            'cluster_id': None,
+            'total_jobs': 0,
+            'successful_jobs': 0,
+            'failed_jobs': 0,
+            'running_jobs': 0,
+            'unknown_jobs': 0,
+            'completion_time_seconds': None,
+            'average_runtime_seconds': None,
+            'max_runtime_seconds': None,
+            'log_file': None,
+        }
+
+    log_file = condor_logs[-1]
+    cluster_id = os.path.basename(log_file).split('.')[1]
+    jobs = {}
+    current_job = None
+
+    with open(log_file, 'r') as handle:
+        for raw_line in handle:
+            stripped = raw_line.strip()
+
+            event_match = re.match(r'^(\d{3}) \((\d+)\.(\d+)\.\d+\) (\d{2}/\d{2} \d{2}:\d{2}:\d{2})', stripped)
+            if event_match:
+                event_code = event_match.group(1)
+                proc_id = int(event_match.group(3))
+                event_time = _parse_condor_timestamp(event_match.group(4))
+                current_job = jobs.setdefault(
+                    proc_id,
+                    {
+                        'submitted_at': None,
+                        'terminated_at': None,
+                        'return_value': None,
+                        'runtime_seconds': None,
+                        'status': 'running',
+                    },
+                )
+                if event_code == '000' and current_job['submitted_at'] is None:
+                    current_job['submitted_at'] = event_time
+                elif event_code == '005':
+                    current_job['terminated_at'] = event_time
+                    current_job['status'] = 'terminated'
+                elif event_code == '012':
+                    current_job['status'] = 'held'
+                elif event_code == '009':
+                    current_job['status'] = 'removed'
+                continue
+
+            if current_job is None:
+                continue
+
+            return_match = re.match(r'^\((\d+)\) (Normal|Abnormal) termination \(return value ([-\d]+)\)$', stripped)
+            if return_match:
+                current_job['return_value'] = int(return_match.group(3))
+                continue
+
+            runtime_match = re.match(r'^TimeExecute \(s\)\s+:\s+(\d+)', stripped)
+            if runtime_match:
+                current_job['runtime_seconds'] = int(runtime_match.group(1))
+
+    successful_jobs = 0
+    failed_jobs = 0
+    running_jobs = 0
+    unknown_jobs = 0
+    submitted_times = []
+    completed_times = []
+    runtimes = []
+
+    for job in jobs.values():
+        if job['submitted_at'] is not None:
+            submitted_times.append(job['submitted_at'])
+        if job['terminated_at'] is not None:
+            completed_times.append(job['terminated_at'])
+        if job['runtime_seconds'] is not None:
+            runtimes.append(job['runtime_seconds'])
+
+        if job['return_value'] == 0:
+            successful_jobs += 1
+        elif job['return_value'] is not None:
+            failed_jobs += 1
+        elif job['status'] in ('running', 'held'):
+            running_jobs += 1
+        else:
+            unknown_jobs += 1
+
+    completion_time_seconds = None
+    if submitted_times and completed_times:
+        completion_time_seconds = (max(completed_times) - min(submitted_times)).total_seconds()
+
+    average_runtime_seconds = None
+    max_runtime_seconds = None
+    if runtimes:
+        average_runtime_seconds = sum(runtimes) / float(len(runtimes))
+        max_runtime_seconds = max(runtimes)
+
+    return {
+        'task_name': task_config.task_name,
+        'cluster_id': cluster_id,
+        'total_jobs': len(jobs),
+        'successful_jobs': successful_jobs,
+        'failed_jobs': failed_jobs,
+        'running_jobs': running_jobs,
+        'unknown_jobs': unknown_jobs,
+        'completion_time_seconds': completion_time_seconds,
+        'average_runtime_seconds': average_runtime_seconds,
+        'max_runtime_seconds': max_runtime_seconds,
+        'log_file': log_file,
+    }
+
+
+def printTaskStats(task_configs):
+    for task_conf in task_configs:
+        stats = parse_condor_log_stats(task_conf)
+        print('-- Stats for task {}'.format(task_conf.task_name))
+        if stats['log_file'] is None:
+            print('   no condor log found')
+            continue
+        print('   cluster id: {}'.format(stats['cluster_id']))
+        print('   jobs total/success/failure/running/unknown: {}/{}/{}/{}/{}'.format(
+            stats['total_jobs'],
+            stats['successful_jobs'],
+            stats['failed_jobs'],
+            stats['running_jobs'],
+            stats['unknown_jobs']))
+        print('   completion time: {}'.format(_format_duration(stats['completion_time_seconds'])))
+        print('   average job runtime: {}'.format(_format_duration(stats['average_runtime_seconds'])))
+        print('   max job runtime: {}'.format(_format_duration(stats['max_runtime_seconds'])))
+        print('   log file: {}'.format(stats['log_file']))
+
+
 def printDoc(task_configs, output_file=None, to_stdout=True):
+    import git
+
     lines = []  # Collect all output lines here
     task_lines = []
 
@@ -738,10 +893,12 @@ def main():
     parser.add_option("--create", action="store_true", dest="CREATE", default=False, help="create the job configuration")
     parser.add_option("--submit", action="store_true", dest="SUBMIT", default=False, help="submit the jobs to condor")
     parser.add_option("--status", action="store_true", dest="STATUS", default=False, help="check the status of the condor tasks")
+    parser.add_option("--stats", action="store_true", dest="STATS", default=False, help="gather success/failure counts and timing stats from task logs")
     parser.add_option("--run-local", action="store_true", dest="RUN", default=False, help="run the tasks on the local host")
     parser.add_option("--doc", action="store_true", dest="DOC", default=False, help="print setup for documentation")
     parser.add_option('-j', '--jobs', dest='NJOBS', help='specify the # of parallel jobs for local processing', default=4)
     parser.add_option('-d', '--dir', dest='LOCALDIR', help='specify the top local directory for local jobs')
+    parser.add_option('-t', '--task', dest='TASK', help='select specific tasks by name (comma-separated list). Run only these tasks instead of all', default=None)
 
     global opt, args
     (opt, args) = parser.parse_args()
@@ -757,6 +914,17 @@ def main():
     
     sub_name = cfgfile['Common']['name']
     tasks = cfgfile['Common']['tasks']
+    
+    # Filter tasks if --task option is specified
+    if opt.TASK:
+        requested_tasks = [t.strip() for t in opt.TASK.split(',')]
+        invalid_tasks = [t for t in requested_tasks if t not in tasks]
+        if invalid_tasks:
+            print(f"Error: task(s) {invalid_tasks} not found in configuration.")
+            print(f"Available tasks: {', '.join(tasks)}")
+            sys.exit(1)
+        tasks = requested_tasks
+    
     task_configs = []
     print(tasks)
     for task in tasks:
@@ -791,6 +959,8 @@ def main():
             printStatus(clusterId)
             printWait(task_conf, clusterId)
             print('   out dir: {}'.format(task_conf.output_dir))
+    elif opt.STATS:
+        printTaskStats(task_configs)
     elif opt.DOC:
         printDoc(task_configs)
 
