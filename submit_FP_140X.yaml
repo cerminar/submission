@@ -13,21 +13,26 @@ Common:
   
   tasks:
     # - DoubleElectron_FlatPt-1To100_PU0
-    - TT_PU200
     # - DYToLL_M-10To50_PU200
     # - DYToLL_M-50_PU200
+    - TT_PU0
+    - TT_PU200
     - DoubleElectron_FlatPt-1To100_PU200
     - DoublePhoton_FlatPt-1To100_PU200
     - NuGunAllEta_PU200
+    - SinglePi_PU0
+    - SinglePi_PU200
+    # - DoublePi_PU0
     # # - ZprimeToEE_M-6000_PU200
     # - HAHM_ZdToEE_m2_pu200
     # - HAHM_ZdToEE_m5_pu200
     # - HAHM_ZdToEE_m15_pu200
 
   # cmssw_config: ../Phase2EGTriggerAnalysis/NtupleProducer/test/step1_L1TCorr_EGNtuples.py
-  version: 140Xv1F5
+  version: 140Xv1M0
   output_dir_base: /eos/cms/store/cmst3/group/l1tr/cerminar/l1teg/fp_ntuples
   ncpu: 1
+  # output_file_name: perfNano.root,perfTuple.root
   output_file_name: perfNano.root
 
 Configuration:
@@ -57,14 +62,15 @@ DoubleElectron_FlatPt-1To100_PU200:
   input_directory:  /eos/cms/store/cmst3/group/l1tr/FastPUPPI/15_1_X/fpinputs_140X/v1/DoubleElectron_FlatPt-1To100-gun/DoubleElectron_FlatPt-1To100_PU200_151Xv0/251006_154048/0000/
   crab: False
   splitting_mode: file_based
-  splitting_granularity: 2
+  splitting_granularity: 5
   inline_customize: 
     - noResp();
     - addGenLep([11,22]);
-    - addTkEG();
+    - addTkEG(doL1=True);
     - addHGCalTPs()
     - addStaEG()
-    # - addDecodedTk();
+    - addDecodedTk();
+    # - saveCands();
     # - addEGCrystalClusters();
     - addDecodedCalo();
   job_flavor: longlunch
@@ -103,21 +109,22 @@ NuGunAllEta_PU200:
   input_directory: /eos/cms/store/cmst3/group/l1tr/FastPUPPI/15_1_X/fpinputs_140X/v1/MinBias_TuneCP5_14TeV-pythia8/NuGunAllEta_PU200_151Xv0/250910_165617/0000/
   crab: False
   splitting_mode: file_based
-  splitting_granularity: 1
+  splitting_granularity: 2
   inline_customize: 
     - noResp();
     - addGenLep([11,22]);
-    - addTkEG();
+    - addTkEG(doL1=True);
     # - addHGCalTPs()
     - addStaEG()
     - noResp()
-    # - addDecodedTk();
+    - addDecodedTk();
     - addDecodedCalo();
     - addSeededConeJets();
     - addCTL2Met();
   job_flavor: longlunch
-  max_events: 700000
-  max_njobs: 150
+  # max_events: -1
+  max_events: -1
+  # max_njobs: 75
 
 # /DYToLL_M-10To50_TuneCP5_14TeV-pythia8/Phase2Fall22DRMiniAOD-PU200_Pilot_125X_mcRun4_realistic_v2-v2/GEN-SIM-DIGI-RAW-MINIAOD
 # /DYToLL_M-10To50_TuneCP5_14TeV-pythia8/Phase2Fall22DRMiniAOD-noPU_Pilot_125X_mcRun4_realistic_v2-v1/GEN-SIM-DIGI-RAW-MINIAOD
@@ -157,6 +164,73 @@ DYToLL_M-50_PU200:
   max_events: -1
 
 
+SinglePi_PU0:
+  # input_dataset: /TT_TuneCP5_14TeV-powheg-pythia8/Phase2HLTTDRSummer20ReRECOMiniAOD-PU200_111X_mcRun4_realistic_T15_v1-v2/FEVT
+  input_directory: /eos/cms/store/cmst3/group/l1tr/FastPUPPI/15_1_X/fpinputs_140X/v1/SinglePion_PT2to200/SinglePion_PT2to200_PU0_151Xv0/250910_165318/0000/
+  crab: False
+  splitting_mode: file_based
+  splitting_granularity: 2
+  inline_customize: 
+    # - addGenLep([11,22]);
+    - addHGCalTPs()
+    # - addTkEG();
+    - addCalib()
+    - noResp()
+    # - addGenPi();
+    - addDecodedCalo();
+    # - addSeededConeJets();
+    # - addCTL2Met();
+    - saveCands();
+    - addGen([130, 211]);
+  job_flavor: longlunch
+  max_events: -1
+
+SinglePi_PU200:
+  # input_dataset: /TT_TuneCP5_14TeV-powheg-pythia8/Phase2HLTTDRSummer20ReRECOMiniAOD-PU200_111X_mcRun4_realistic_T15_v1-v2/FEVT
+  input_directory: /eos/cms/store/cmst3/group/l1tr/FastPUPPI/15_1_X/fpinputs_140X/v1/SinglePion_PT2to200/SinglePion_PT2to200_PU200_151Xv0/250910_165250/0000
+  crab: False
+  splitting_mode: file_based
+  splitting_granularity: 2
+  inline_customize: 
+    # - addGenLep([11,22]);
+    - addHGCalTPs()
+    # - addTkEG();
+    - noResp()
+    # - addGenPi();
+    - addDecodedCalo();
+    # - addSeededConeJets();
+    # - addCTL2Met();
+    - saveCands();
+    - addGen([130, 211]);
+  job_flavor: longlunch
+  max_events: -1
+
+
+
+DoublePi_PU0:
+  # input_dataset: /TT_TuneCP5_14TeV-powheg-pythia8/Phase2HLTTDRSummer20ReRECOMiniAOD-PU200_111X_mcRun4_realistic_T15_v1-v2/FEVT
+  input_directory: /eos/cms/store/cmst3/group/l1tr/FastPUPPI/14_2_X/fpinputs_140X/v0/DoubleChargedPion_FlatPt-1To100_PU0/
+  crab: False
+  splitting_mode: file_based
+  splitting_granularity: 4
+  inline_customize: 
+    # - addGenLep([11,22]);
+    - addHGCalTPs()
+    # - addTkEG();
+    - noResp()
+    # - addGenPi();
+    # - addCalib()
+    - addDecodedCalo();
+    # - addSeededConeJets();
+    # - addCTL2Met();
+    - saveCands();
+    - addGen([130, 211]);
+  job_flavor: longlunch
+  max_events: -1
+
+
+
+
 
 
 # /TTTo2L2Nu_TuneCP5_14TeV-powheg-pythia8/Phase2Fall22DRMiniAOD-PU200_125X_mcRun4_realistic_v2-v1/GEN-SIM-DIGI-RAW-MINIAOD
@@ -164,14 +238,25 @@ DYToLL_M-50_PU200:
 # /TT_TuneCP5_14TeV-powheg-pythia8/Phase2Fall22DRMiniAOD-PU200_125X_mcRun4_realistic_v2_ext1-v1/GEN-SIM-DIGI-RAW-MINIAOD
 # /TT_TuneCP5_14TeV-powheg-pythia8/Phase2Fall22DRMiniAOD-PU200_PUTP_125X_mcRun4_realistic_v2-v1/GEN-SIM-DIGI-RAW-MINIAOD
 
-# TT_PU0:
-#   input_dataset: /TTbar_14TeV_TuneCP5_Pythia8/PhaseIITDRSpring19DR-NoPU_106X_upgrade2023_realistic_v3-v1/GEN-SIM-DIGI-RAW
-#   # input_directory =
-#   crab: True
-#   splitting_mode: Automatic
-#   splitting_granularity: 500
-#   # job_flavor =
-#   max_events: 100000
+TT_PU0:
+  # input_dataset: /TT_TuneCP5_14TeV-powheg-pythia8/Phase2HLTTDRSummer20ReRECOMiniAOD-PU200_111X_mcRun4_realistic_T15_v1-v2/FEVT
+  input_directory: /eos/cms/store/cmst3/group/l1tr/FastPUPPI/15_1_X/fpinputs_140X/v1/TT_TuneCP5_14TeV-powheg-pythia8/TT_PU0_140Xv1/INFP/140Xv1
+  crab: False
+  splitting_mode: file_based
+  splitting_granularity: 6
+  inline_customize: 
+    - addGenLep([11,22]);
+    - addHGCalTPs()
+    - addTkEG();
+    - noResp()
+    # - addGenPi();
+    - addDecodedCalo();
+    - addSeededConeJets();
+    - addCTL2Met();
+    - saveCands();
+    - addGen([130, 211]);
+  job_flavor: longlunch
+  max_events: -1
 
 TT_PU200:
   # input_dataset: /TT_TuneCP5_14TeV-powheg-pythia8/Phase2HLTTDRSummer20ReRECOMiniAOD-PU200_111X_mcRun4_realistic_T15_v1-v2/FEVT
@@ -184,10 +269,12 @@ TT_PU200:
     - addHGCalTPs()
     - addTkEG();
     - noResp()
-    - addGenPi();
+    # - addGenPi();
     - addDecodedCalo();
     - addSeededConeJets();
     - addCTL2Met();
+    - saveCands();
+    - addGen([130, 211]);
   job_flavor: longlunch
   max_events: -1
 
