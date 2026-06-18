@@ -616,6 +616,60 @@ def _format_duration(seconds):
     return f'{hours:d}:{minutes:02d}:{secs:02d}'
 
 
+def _render_runtime_plot(job_runtimes, nbins=10, height=10):
+    if not job_runtimes:
+        return ['      no per-job runtime information available']
+
+    runtimes = [runtime for _, runtime in job_runtimes]
+    min_runtime = min(runtimes)
+    max_runtime = max(runtimes)
+
+    if min_runtime == max_runtime:
+        return [
+            '      all jobs fall in a single runtime bin: {} ({} jobs)'.format(
+                _format_duration(min_runtime), len(runtimes))
+        ]
+
+    bin_width = float(max_runtime - min_runtime) / nbins
+    counts = [0] * nbins
+    for runtime in runtimes:
+        if runtime == max_runtime:
+            bin_index = nbins - 1
+        else:
+            bin_index = int((runtime - min_runtime) / bin_width)
+        counts[bin_index] += 1
+
+    max_count = max(counts)
+    if max_count == 0:
+        return ['      no per-job runtime information available']
+
+    plot_lines = []
+
+    scaled_counts = []
+    for count in counts:
+        scaled = int(round((float(count) / max_count) * height)) if count > 0 else 0
+        scaled_counts.append(max(1, scaled) if count > 0 else 0)
+
+    for level in range(height, 0, -1):
+        row = []
+        for scaled in scaled_counts:
+            row.append('##' if scaled >= level else '  ')
+        plot_lines.append('      {:>3} | {}'.format(
+            int(round((float(level) / height) * max_count)), ' '.join(row)))
+
+    plot_lines.append('          +' + '-' * (3 * nbins - 1))
+
+    label_row = []
+    for index in range(nbins):
+        low_edge = min_runtime + index * bin_width
+        high_edge = min_runtime + (index + 1) * bin_width
+        label_row.append('{:>2}'.format(int(round(high_edge / 60.0))))
+    plot_lines.append('           ' + '  '.join(label_row) + '  min')
+    plot_lines.append('      bins: each column is a runtime bin from {} to {}'.format(
+        _format_duration(min_runtime), _format_duration(max_runtime)))
+    return plot_lines
+
+
 def parse_condor_log_stats(task_config):
     logs_dir = os.path.join(task_config.task_dir, 'logs')
     condor_logs = sorted(glob.glob(os.path.join(logs_dir, 'condor.*.log')))
@@ -716,6 +770,11 @@ def parse_condor_log_stats(task_config):
         average_runtime_seconds = sum(runtimes) / float(len(runtimes))
         max_runtime_seconds = max(runtimes)
 
+    runtime_by_job = []
+    for job_id, job in sorted(jobs.items()):
+        if job['runtime_seconds'] is not None:
+            runtime_by_job.append((job_id, job['runtime_seconds']))
+
     return {
         'task_name': task_config.task_name,
         'cluster_id': cluster_id,
@@ -727,6 +786,7 @@ def parse_condor_log_stats(task_config):
         'completion_time_seconds': completion_time_seconds,
         'average_runtime_seconds': average_runtime_seconds,
         'max_runtime_seconds': max_runtime_seconds,
+        'runtime_by_job': runtime_by_job,
         'log_file': log_file,
     }
 
@@ -748,6 +808,9 @@ def printTaskStats(task_configs):
         print('   completion time: {}'.format(_format_duration(stats['completion_time_seconds'])))
         print('   average job runtime: {}'.format(_format_duration(stats['average_runtime_seconds'])))
         print('   max job runtime: {}'.format(_format_duration(stats['max_runtime_seconds'])))
+        print('   runtime by job:')
+        for line in _render_runtime_plot(stats['runtime_by_job']):
+            print(line)
         print('   log file: {}'.format(stats['log_file']))
 
 
@@ -899,6 +962,7 @@ def main():
     parser.add_option('-j', '--jobs', dest='NJOBS', help='specify the # of parallel jobs for local processing', default=4)
     parser.add_option('-d', '--dir', dest='LOCALDIR', help='specify the top local directory for local jobs')
     parser.add_option('-t', '--task', dest='TASK', help='select specific tasks by name (comma-separated list). Run only these tasks instead of all', default=None)
+    parser.add_option('-v', '--version', dest='VERSION', help='override campaign version (used by --stats to choose task directory)', default=None)
 
     global opt, args
     (opt, args) = parser.parse_args()
@@ -911,6 +975,10 @@ def main():
     
     cfgfile = {}
     cfgfile.update(parse_yaml(opt.CONFIGFILE))
+
+    # For stats, allow overriding the configured version from the CLI.
+    if opt.STATS and opt.VERSION:
+        cfgfile['Common']['version'] = opt.VERSION
     
     sub_name = cfgfile['Common']['name']
     tasks = cfgfile['Common']['tasks']
